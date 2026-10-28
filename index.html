@@ -48,7 +48,7 @@ async function loadContributions() {
   console.log('Contributions found:', data.length);
 
   for (let i = 0; i < data.length; i++) {
-    addElement();
+    addElement(data[i].id);
   }
 }
 function windowResized() {
@@ -62,7 +62,12 @@ function keyPressed() {
   }
 }
 
-function addElement() {
+function addElement(id = null) {
+ 
+  if (id !== null) {
+    randomSeed(id * 1000);
+    noiseSeed(id * 1000);
+  }
   const e = {
     x: random(0.06, 0.94),          // position stored as % of the window,
     y: random(0.08, 0.92),          // so resizing never breaks the artwork
