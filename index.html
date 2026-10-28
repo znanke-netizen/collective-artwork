@@ -33,7 +33,7 @@ function setup() {
   noiseSeed(7);
   loadContributions();
 
-  setInterval(checkForNewContributions, 2000);
+  setInterval(checkForNewContributions, 1000);
 }
 
 async function loadContributions() {
@@ -86,7 +86,6 @@ function addElement(id = null) {
  
   if (id !== null) {
     randomSeed(id * 1000);
-    noiseSeed(id * 1000);
   }
   const e = {
     x: random(0.06, 0.94),          // position stored as % of the window,
