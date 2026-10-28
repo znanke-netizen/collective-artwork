@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Collective Artwork</title>
+  <style>
+    html, body { margin: 0; padding: 0; overflow: hidden; background: #f2eee6; }
+    canvas { display: block; }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
+</head>
+<body>
+<script>
+// ---------- SETTINGS YOU CAN PLAY WITH ----------
+const BACKGROUND = '#f2eee6';
+const PALETTE = ['#d9583b', '#1f3a5f', '#e0a43a', '#8aa58a', '#e8a5a0', '#2b2b2b', '#6b7fb5'];
+const APPEAR_TIME = 1400;      // how long a shape takes to appear (milliseconds)
+const LINE_DELAY = 400;        // lines start drawing slightly after the shape
+const LINE_TIME = 1800;        // how long a line takes to draw
+const MAX_LINKS = 3;           // how many neighbours each new shape connects to
+// -------------------------------------------------
+
+let items = [];
+
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  noiseSeed(7);
+}
+
+function windowResized() {
+  resizeCanvas(windowWidth, windowHeight);
+}
+
+function keyPressed() {
+  if (key === ' ') {
+    addElement();
+    return false; // stops the page from scrolling
+  }
+}
+
+function addElement() {
+  const e = {
+    x: random(0.06, 0.94),          // position stored as % of the window,
+    y: random(0.08, 0.92),          // so resizing never breaks the artwork
+    size: random(0.035, 0.15),
+    rot: random(TWO_PI),
+    spin: random(-0.0004, 0.0004),
+    seed: random(1000),
+    col: color(random(PALETTE)),
+    type: floor(random(4)),
+    born: millis(),
+    links: []
+  };
+
+  // connect to the nearest existing shapes
+  const others = items
+    .map(o => ({ o, d: dist(o.x, o.y, e.x, e.y) }))
+    .sort((a, b) => a.d - b.d)
+    .slice(0, floor(random(1, MAX_LINKS + 1)));
+  for (const n of others) {
+    e.links.push({ target: n.o, bend: random(-0.35, 0.35) });
+  }
+  items.push(e);
+}
+
+function easeOut(t) {
+  t = constrain(t, 0, 1);
+  return 1 - pow(1 - t, 3);
+}
+
+function draw() {
+  background(BACKGROUND);
+  const now = millis();
+  const base = min(width, height);
+
+  // 1) connecting lines (drawn underneath)
+  for (const e of items) {
+    const age = now - e.born;
+    for (const l of e.links) {
+      const p = easeOut((age - LINE_DELAY) / LINE_TIME);
+      if (p <= 0) continue;
+      const x1 = e.x * width, y1 = e.y * height;
+      const x2 = l.target.x * width, y2 = l.target.y * height;
+      const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+      const nx = -(y2 - y1), ny = (x2 - x1);   // perpendicular direction
+      const cx = mx + nx * l.bend, cy = my + ny * l.bend;
+
+      stroke(red(e.col), green(e.col), blue(e.col), 150);
+      strokeWeight(1);
+      noFill();
+      beginShape();
+      const steps = 40;
+      for (let i = 0; i <= steps * p; i++) {
+        const t = i / steps;
+        const x = (1 - t) * (1 - t) * x1 + 2 * (1 - t) * t * cx + t * t * x2;
+        const y = (1 - t) * (1 - t) * y1 + 2 * (1 - t) * t * cy + t * t * y2;
+        vertex(x, y);
+      }
+      endShape();
+    }
+  }
+
+  // 2) the organic shapes
+  for (const e of items) {
+    const age = now - e.born;
+    const p = easeOut(age / APPEAR_TIME);
+    const r = e.size * base * p;
+    const px = e.x * width;
+    const py = e.y * height;
+    const angle = e.rot + now * e.spin;
+    const t = now * 0.0002; // slow breathing movement
+
+    push();
+    translate(px, py);
+    rotate(angle);
+
+    if (e.type === 0) {
+      // soft filled blob
+      noStroke();
+      fill(red(e.col), green(e.col), blue(e.col), 150 * p);
+      blob(r, e.seed, t);
+    } else if (e.type === 1) {
+      // concentric outlines
+      noFill();
+      for (let k = 0; k < 4; k++) {
+        stroke(red(e.col), green(e.col), blue(e.col), 190 * p);
+        strokeWeight(1);
+        blob(r * (1 - k * 0.2), e.seed + k * 0.3, t);
+      }
+    } else if (e.type === 2) {
+      // filled blob with an inner contrast blob and a dot
+      noStroke();
+      fill(red(e.col), green(e.col), blue(e.col), 120 * p);
+      blob(r, e.seed, t);
+      fill(red(e.col), green(e.col), blue(e.col), 220 * p);
+      blob(r * 0.4, e.seed + 5, t);
+      fill(BACKGROUND);
+      circle(r * 0.1, -r * 0.1, r * 0.12);
+    } else {
+      // outline blob with a small solid core
+      noFill();
+      stroke(red(e.col), green(e.col), blue(e.col), 220 * p);
+      strokeWeight(1.5);
+      blob(r, e.seed, t);
+      noStroke();
+      fill(red(e.col), green(e.col), blue(e.col), 230 * p);
+      circle(0, 0, r * 0.18);
+    }
+    pop();
+  }
+}
+
+// draws one organic, noise-based shape around (0,0)
+function blob(radius, seed, t) {
+  beginShape();
+  const points = 90;
+  for (let i = 0; i < points; i++) {
+    const a = (i / points) * TWO_PI;
+    const n = noise(seed + cos(a) * 0.8 + 5, seed + sin(a) * 0.8 + 5, t);
+    const rr = radius * (0.5 + 0.95 * n);
+    vertex(cos(a) * rr, sin(a) * rr);
+  }
+  endShape(CLOSE);
+}
+</script>
+</body>
+</html>
