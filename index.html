@@ -32,6 +32,8 @@ function setup() {
   createCanvas(windowWidth, windowHeight);
   noiseSeed(7);
   loadContributions();
+
+  setInterval(checkForNewContributions, 1000);
 }
 
 async function loadContributions() {
@@ -49,6 +51,24 @@ async function loadContributions() {
 
   for (let i = 0; i < data.length; i++) {
     addElement(data[i].id);
+  }
+}
+  
+  async function checkForNewContributions() {
+  const { data, error } = await db
+    .from('contributions')
+    .select('id')
+    .order('id', { ascending: true });
+
+  if (error) {
+    console.error('Could not check contributions:', error);
+    return;
+  }
+
+  if (data.length > items.length) {
+    for (let i = items.length; i < data.length; i++) {
+      addElement(data[i].id);
+    }
   }
 }
 function windowResized() {
