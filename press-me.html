@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<!--
+  ============================================================
+  PRESS ME — pagina di partenza
+  ============================================================
+
+  COS'È
+  Una pagina con un solo bottone vintage 3D al centro.
+  Quando lo premi si abbassa davvero. Per ora non fa nient'altro.
+
+  LA SFIDA
+  Inventate voi cosa succede quando qualcuno preme il bottone.
+
+  PRIMA COSA
+  Sostituite "Nome Cognome" (nell'<h1 id="student-name">, segnato
+  con ✏️) con il vostro nome e cognome.
+
+  NOTE PER CHI MODIFICA (persone o assistenti AI)
+  - È tutto in questo unico file: HTML, CSS e JavaScript. Niente
+    librerie esterne, si apre con un doppio click nel browser.
+  - Il punto dove aggiungere il comportamento è la funzione
+    onPress() nel <script> in fondo, segnata con "👉 QUI".
+  - Viene chiamata una volta per ogni pressione (mouse, dito
+    o tastiera: Invio / Spazio).
+  - Il contatore pressCount sa quante volte è stato premuto.
+  - Il bottone ha id="press-button", il contenitore della scena
+    ha id="stage". Potete aggiungere elementi, suoni, animazioni,
+    cambiare tutta la pagina: non ci sono regole.
+  - Se cambiate lo stile del bottone, l'effetto "schiacciato"
+    sta nella classe .is-pressed e in :active (sezione CSS
+    "STATO PREMUTO").
+  ============================================================
+-->
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Press Me</title>
+
+  <style>
+    /* ---------- COLORI (cambiateli qui) ---------- */
+    :root {
+      --bg:          #efe5cf;  /* carta crema */
+      --bg-dark:     #d9ccb0;  /* vignettatura ai bordi */
+      --bezel:       #2b2622;  /* anello scuro attorno al bottone */
+      --bezel-light: #4a423b;
+      --face:        #d9452f;  /* faccia del bottone */
+      --face-light:  #ef6a4f;
+      --side:        #8f2617;  /* fianco del bottone (lo spessore 3D) */
+      --label:       #fbf1dc;  /* colore del testo */
+      --depth:       14px;     /* quanto è "alto" il bottone */
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      height: 100%;
+    }
+
+    body {
+      background:
+        radial-gradient(ellipse at center, var(--bg) 40%, var(--bg-dark) 100%);
+      font-family: "Courier New", Courier, monospace;
+      overflow: hidden;
+    }
+
+    /* Scena: occupa tutta la pagina e centra il bottone */
+    #stage {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ---------- NOME DELLO STUDENTE (in alto nella pagina) ---------- */
+    #student-name {
+      position: absolute;
+      top: 32px;
+      left: 16px;
+      right: 16px;
+      margin: 0;
+      color: var(--bezel);
+      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      font-size: 22px;
+      font-weight: bold;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      text-align: center;
+    }
+
+    /* ---------- ANELLO (la base in cui è montato il bottone) ---------- */
+    .bezel {
+      padding: 22px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 30%, var(--bezel-light), var(--bezel) 70%);
+      box-shadow:
+        0 18px 30px rgba(60, 40, 20, 0.35),
+        inset 0 2px 2px rgba(255, 255, 255, 0.12),
+        inset 0 -4px 8px rgba(0, 0, 0, 0.5);
+    }
+
+    /* ---------- IL BOTTONE ---------- */
+    #press-button {
+      position: relative;
+      width: 220px;
+      height: 220px;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+
+      background: radial-gradient(circle at 38% 30%, var(--face-light), var(--face) 60%);
+      color: var(--label);
+      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      font-size: 26px;
+      font-weight: bold;
+      letter-spacing: 0.18em;
+      text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.35);
+
+      /* lo spessore 3D è fatto con le ombre */
+      transform: translateY(calc(var(--depth) * -1));
+      box-shadow:
+        0 var(--depth) 0 var(--side),                     /* fianco */
+        0 calc(var(--depth) + 6px) 14px rgba(0, 0, 0, 0.45), /* ombra sotto */
+        inset 0 4px 6px rgba(255, 255, 255, 0.25),        /* riflesso sopra */
+        inset 0 -6px 10px rgba(0, 0, 0, 0.2);
+
+      transition: transform 70ms ease-out, box-shadow 70ms ease-out;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    #press-button:focus-visible {
+      outline: 3px dashed var(--label);
+      outline-offset: 6px;
+    }
+
+    /* ---------- STATO PREMUTO ---------- */
+    #press-button:active,
+    #press-button.is-pressed {
+      transform: translateY(-2px);
+      box-shadow:
+        0 2px 0 var(--side),
+        0 4px 6px rgba(0, 0, 0, 0.45),
+        inset 0 4px 10px rgba(0, 0, 0, 0.25);
+    }
+
+    @media (max-width: 400px) {
+      #press-button { width: 170px; height: 170px; font-size: 21px; }
+    }
+  </style>
+</head>
+<body>
+
+  <main id="stage">
+    <!-- ✏️ Scrivete qui il vostro nome e cognome -->
+    <h1 id="student-name">Zuzanna Nanke</h1>
+
+    <div class="bezel">
+      <button id="press-button" type="button">LEAVE<br>A TRACE</button>
+    </div>
+  </main>
+
+  <script>
+    const button = document.getElementById("press-button");
+    const stage  = document.getElementById("stage");
+    let pressCount = 0;
+
+    // ============================================================
+    // 👉 QUI: cosa succede quando il bottone viene premuto.
+    //    Questa funzione parte a ogni pressione.
+    //    pressCount = quante volte è stato premuto finora.
+    // ============================================================
+  function onPress() {
+  fetch('https://collective-artwork.app.n8n.cloud/webhook/c3ee8cf4-0423-4390-acc9-d9ff0aabd945', {
+    method: 'POST'
+  })
+  .then(() => {
+    console.log("Contribution sent!");
+  })
+  .catch((error) => {
+    console.error("Error sending contribution:", error);
+  });
+}
+
+
+    // ------------------------------------------------------------
+    // Da qui in giù: gestione della pressione (mouse, touch,
+    // tastiera). Non serve toccarlo per far succedere cose.
+    // ------------------------------------------------------------
+    button.addEventListener("pointerdown", () => button.classList.add("is-pressed"));
+    ["pointerup", "pointerleave", "pointercancel"].forEach((type) =>
+      button.addEventListener(type, () => button.classList.remove("is-pressed"))
+    );
+
+    // "click" scatta sia col mouse/dito sia con Invio/Spazio da tastiera
+    button.addEventListener("click", () => {
+      pressCount++;
+      onPress();
+    });
+  </script>
+
+</body>
+</html>
